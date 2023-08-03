@@ -1,0 +1,2 @@
+#!/bin/bash
+chmod _R a+x .
