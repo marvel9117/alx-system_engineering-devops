@@ -1,18 +1,34 @@
 #!/usr/bin/env bash
-# Install nginx and start it
-apt-get -y install nginx
-
-# Firewall setting: Allow Nginx to serve on HTTP
-ufw allow 'Nginx HTTP'
-
-# Override the default index file served as home page
-echo "Holberton School" >> /var/www/html/index.html
-
-#Give the user  ownership to website files
-sudo chown -R $USER:$USER /var/www/html
+# Installs, configures, and starts the server
+sudo apt-get update
+sudo apt-get -y install nginx
+sudo ufw allow 'Nginx HTTP'
+mkdir -p /var/www/html/
 sudo chmod -R 755 /var/www
+echo 'Hello World!' > /var/www/html/index.html
+SERVER_CONFIG=\
+"server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
 
-# Redirect to /redirect_me to a youtube video
-sed -i '37i\rewrite ^/redirect_me https://www.youtube.com/watch?v=QH2-TGUlwu4 permanent;' /etc/nginx/sites-available/default
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
 
-service nginx start
+	server_name _;
+
+	location / {
+		try_files \$uri \$uri/ =404;
+	}
+
+	if (\$request_filename ~ redirect_me){
+		rewrite ^ https://sketchfab.com/bluepeno/models permanent;
+	}
+}"
+
+bash -c "echo -e '$SERVER_CONFIG' > /etc/nginx/sites-enabled/default"
+
+if [ "$(pgrep -c nginx)" -le 0 ]; then
+	sudo service nginx start
+else
+	sudo service nginx restart
+fi
