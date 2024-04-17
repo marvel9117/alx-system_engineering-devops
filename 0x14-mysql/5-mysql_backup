@@ -1,11 +1,22 @@
 #!/usr/bin/env bash
-# backup and compress my databases
+# Bash script that generates a MySQL dump and creates a compressed archive out of it.
+if [ $# -ne 1 ]; then
+	echo "USEAGE: 5-mysql_backup 'YOUR_PASSWORD'"
+	exit 1
+fi
 
-# variables
-day=$(date +"%d")
-month=$(date +"%m")
-year=$(date +"%Y")
-file_name="$day-$month-$year.tar.gz"
-
-mysqldump --all-databases -u root --password="$1" > backup.sql
-tar -czvf "$file_name" backup.sql
+pwd="$1"
+# command to run
+cmd="sudo mysqldump -u root --password=${pwd}  --all-databases > backup.sql"
+# running the command
+eval "$cmd"
+# to check if the command was successful
+if ! eval "$cmd"; then
+	echo "There was an error creating sql dump back up"
+	exit 1
+fi
+# date for archive name
+arc_date=$(date +'%d-%m-%Y')
+arc_name="$arc_date.tar.gz"
+sudo tar -czf "$arc_name" backup.sql
+echo "process successful!"
