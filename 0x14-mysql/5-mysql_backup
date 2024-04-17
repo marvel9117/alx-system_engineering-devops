@@ -1,22 +1,36 @@
 #!/usr/bin/env bash
+
 # Bash script that generates a MySQL dump and creates a compressed archive out of it.
+
+# Check if the correct number of arguments is provided
 if [ $# -ne 1 ]; then
-	echo "USEAGE: 5-mysql_backup 'YOUR_PASSWORD'"
-	exit 1
+    echo "USAGE: $0 'YOUR_PASSWORD'"
+    exit 1
 fi
 
-pwd="$1"
-# command to run
-cmd="sudo mysqldump -u root --password=${pwd}  --all-databases > backup.sql"
-# running the command
-eval "$cmd"
-# to check if the command was successful
+# Assign the password to a variable
+password="$1"
+
+# Command to run
+cmd="sudo mysqldump -u root --password=${password} --all-databases > backup.sql"
+
+# Running the command
 if ! eval "$cmd"; then
-	echo "There was an error creating sql dump back up"
-	exit 1
+    echo "There was an error creating sql dump back up"
+    exit 1
 fi
-# date for archive name
+
+# Date for archive name
 arc_date=$(date +'%d-%m-%Y')
 arc_name="$arc_date.tar.gz"
+
+# Compress the backup.sql file into a tar.gz archive
 sudo tar -czf "$arc_name" backup.sql
-echo "process successful!"
+
+# Check if the process was successful
+if [ $? -eq 0 ]; then
+    echo "Process successful!"
+else
+    echo "There was an error creating the archive"
+    exit 1
+fi
