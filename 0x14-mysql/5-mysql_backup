@@ -1,12 +1,32 @@
 #!/usr/bin/env bash
 # Generates a MySQL dump and creates a compressed archive out of it.
 
-if [ "$#" -ne 1 ];
-then
-    echo "Usage: 5-mysql_backup <mysql password>"
+# Check if exactly one argument (MySQL password) is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <mysql password>"
     exit 1
 fi
 
+# Dump all databases to backup.sql
 mysqldump --all-databases -u root --password="$1" > backup.sql
-archive=$(date +'%d-%m-%Y')
-tar -czvf "$archive.tar.gz" backup.sql
+
+# Check if mysqldump was successful
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to create MySQL dump."
+    exit 1
+fi
+
+# Get the current date for archive naming
+archive_date=$(date +'%d-%m-%Y')
+
+# Compress backup.sql into a tar.gz archive with the date included in the filename
+archive="$archive_date.tar.gz"
+tar -czvf "$archive" backup.sql
+
+# Check if tar was successful
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to create the archive."
+    exit 1
+fi
+
+echo "Backup successful!"
