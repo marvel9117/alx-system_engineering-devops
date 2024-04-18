@@ -21,15 +21,19 @@ archive_date=$(date +'%d-%m-%Y')
 
 # Compress backup.sql into a tar.gz archive with the date included in the filename
 archive="$archive_date.tar.gz"
-tar -czf "$archive" backup.sql
-
-# Store the exit status of the tar command
-tar_exit_status=$?
+tar -czf "$archive" backup.sql > /dev/null 2>&1
 
 # Check if tar was successful
-if [ $tar_exit_status -ne 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Error: Failed to create the archive."
     exit 1
 fi
 
+# Check if the output contains the expected string
+if ! file "$archive" | grep -q "gzip compressed data"; then
+    echo "Error: The output does not contain 'gzip compressed data'."
+    exit 1
+fi
+
 echo "Backup successful!"
+
