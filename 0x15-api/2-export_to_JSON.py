@@ -1,75 +1,71 @@
 #!/usr/bin/python3
-'''
-module: 2-export_to_JSON.py
-This script interacts with a RESTful API to retrieve
-and export TODO list progress for a given employee ID in JSON format.
-
-Usage:
-    python3 2-export_to_JSON.py <employee_id>
-'''
-
+"""
+Fetches employees todo details from an api
+"""
 import json
 import requests
 import sys
 
 
-def todo_progress(user_id):
-    '''
-    Retrieve and export TODO list progress for the specified employee
-    in JSON format.
+BASE_URL = "https://jsonplaceholder.typicode.com/users/{}"
+TODO_URL = BASE_URL + '/todos'
 
-    Args:
-        user_id (int): The ID of the employee.
-    Returns:
-        None
-    '''
 
-    base_url = 'https://jsonplaceholder.typicode.com'
-    user_url = f'{base_url}/users/{user_id}'
-    todos_url = f'{base_url}/todos?userId={user_id}'
-
+def get_employee_info(employee_id):
+    """Fetches employee name"""
+    employee_info_url = BASE_URL.format(employee_id)
     try:
-        user_res = requests.get(user_url)
-        todos_res = requests.get(todos_url)
-
-        if user_res.status_code != 200 or todos_res.status_code != 200:
-            print('Error: Failed to retrieve data from API.')
-            sys.exit(1)
-
-        user_data = user_res.json()
-        todos_data = todos_res.json()
-
-        employee_id = user_data.get('id')
-        employee_name = user_data.get('username')
-
-        data = {str(employee_id): []}
-
-        for task in todos_data:
-            completed_status = task.get('completed')
-            task_title = task.get('title')
-            data[str(employee_id)].append({
-                'task': task_title,
-                'completed': completed_status,
-                'username': employee_name
-            })
-
-        file_name = f'{employee_id}.json'
-
-        with open(file_name, mode='w') as json_file:
-            json.dump(data, json_file)
-
-        print(f'Data exported to {file_name}')
-
+        employee_info_response = requests.get(employee_info_url).json()
+        return employee_info_response.get('username')
     except requests.exceptions.RequestException as e:
-        print(f'Error: {e}')
+        print("Error fetching employee information: %s", e)
         sys.exit(1)
 
 
-if __name__ == '__main__':
-    user_id = sys.argv[1]
-
-    if not user_id.isdigit():
-        print('Error: Employee ID must be an integer.')
+def fetch_employee_todo_progress(employee_id):
+    """
+    Given employee ID, returns information about his/her
+    TODO list progress
+    """
+    todo_url = TODO_URL.format(employee_id)
+    try:
+        todo_response = requests.get(todo_url).json()
+        return todo_response
+    except requests.exceptions.RequestException as e:
+        print("Error fetching employee TODO information: %s", e)
         sys.exit(1)
 
-    todo_progress(int(user_id))
+
+def write_to_json_file(employee_id, employee_name, todo_data, json_file):
+    """Writes to a json file"""
+    try:
+        user_tasks = {employee_id: []}
+        for res in todo_data:
+            user_tasks[employee_id].append({
+                "task": res.get('title'),
+                "completed": res.get('completed'),
+                "username": employee_name
+            })
+        with open(json_file, 'w') as f:
+            json.dump(user_tasks, f)
+    except requests.exceptions.RequestException as e:
+        print("Error occurred while writing to a file: {}".format(e))
+        exit(1)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or not sys.argv[1].isdigit():
+        print("Usage: {} <employee_id>".format(sys.argv[0]))
+        exit(1)
+
+    employee_id = int(sys.argv[1])
+    json_file = "{}.json".format(employee_id)
+    try:
+        employee_name = get_employee_info(employee_id)
+        todo_data = fetch_employee_todo_progress(employee_id)
+        write_to_json_file(employee_id=employee_id,
+                           employee_name=employee_name,
+                           todo_data=todo_data, json_file=json_file)
+    except Exception as e:
+        print("An error occurred: %s", e)
+        sys.exit(1)
